@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package chatkafka.chat;
+
+import "google/protobuf/any.proto";
+
+
+option go_package = "internal/proto/types";
+
+
+
+service ChatService {
+    //私聊,群聊
+    rpc Chat(stream ChatServiceRequest) returns(stream ChatServiceResponse);
+    //广播,用户和服务端都可以发广播
+    rpc Broadcast(stream ChatServiceRequest) returns (stream ChatServiceResponse);
+}
+
+message AnyContent {
+    google.protobuf.Any value = 1;
+}
+
+message MsgType {
+    string msg_type = 1; //text,face,sound,image,file,video
+    AnyContent msg_content = 2;
+}
+
+message ChatServiceRequest {
+    string from = 1; //发送方
+    string to = 2; //值是唯一的标识， 根据chat_type 来决定唯一的用户还是群组
+    repeated MsgType msg = 3; //发送内容，数组 支持多类型信息一起发送
+    string chat_type = 4; // private,group
+}
+
+message ChatServiceResponse {
+    string from = 1; //消息来源
+    repeated MsgType msg =  2; //返回消息
+    string chat_type = 3; // private,group
+    repeated string to =4; //接受方 
+}
+
+//文本消息
+message TextMsg {
+    string value = 1;
+}
+
+//表情消息
+message FaceMsg {
+    int64 index = 1; //表情索引，用户自定义。
+    string data = 2; //额外数据。
+} 
+
+//语音消息
+message SoundMsg {
+    string url = 1; //语音下载地址，可通过该 URL 地址直接下载相应语音。
+    string uuid = 2;//语音的唯一标识，客户端用于索引语音的键值。
+    int64 size = 3;//语音数据大小，单位：字节。
+    int64 second = 4;//语音时长，单位：秒。
+    int64 downloadFlag = 5; //语音下载方式标记。目前 Download_Flag 取值只能为2，表示可通过Url字段值的 URL 地址直接下载语音。
+}

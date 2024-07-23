@@ -77,8 +77,8 @@ func (c *chatServiceClient) Broadcast(ctx context.Context, opts ...grpc.CallOpti
 }
 
 type ChatService_BroadcastClient interface {
-	Send(*BroadcastRequest) error
-	Recv() (*BroadcastResponse, error)
+	Send(*ChatServiceRequest) error
+	Recv() (*ChatServiceResponse, error)
 	grpc.ClientStream
 }
 
@@ -86,12 +86,12 @@ type chatServiceBroadcastClient struct {
 	grpc.ClientStream
 }
 
-func (x *chatServiceBroadcastClient) Send(m *BroadcastRequest) error {
+func (x *chatServiceBroadcastClient) Send(m *ChatServiceRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *chatServiceBroadcastClient) Recv() (*BroadcastResponse, error) {
-	m := new(BroadcastResponse)
+func (x *chatServiceBroadcastClient) Recv() (*ChatServiceResponse, error) {
+	m := new(ChatServiceResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -163,8 +163,8 @@ func _ChatService_Broadcast_Handler(srv interface{}, stream grpc.ServerStream) e
 }
 
 type ChatService_BroadcastServer interface {
-	Send(*BroadcastResponse) error
-	Recv() (*BroadcastRequest, error)
+	Send(*ChatServiceResponse) error
+	Recv() (*ChatServiceRequest, error)
 	grpc.ServerStream
 }
 
@@ -172,12 +172,12 @@ type chatServiceBroadcastServer struct {
 	grpc.ServerStream
 }
 
-func (x *chatServiceBroadcastServer) Send(m *BroadcastResponse) error {
+func (x *chatServiceBroadcastServer) Send(m *ChatServiceResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *chatServiceBroadcastServer) Recv() (*BroadcastRequest, error) {
-	m := new(BroadcastRequest)
+func (x *chatServiceBroadcastServer) Recv() (*ChatServiceRequest, error) {
+	m := new(ChatServiceRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
