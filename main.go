@@ -4,22 +4,12 @@ import (
 	"log"
 	"net"
 
-	interfaces_grpc "github.com/seedlings-calm/chat-kafka/internal/interfaces/grpc"
-	"github.com/seedlings-calm/chat-kafka/internal/interfaces/repository"
-	logic "github.com/seedlings-calm/chat-kafka/internal/logic/grpc"
-	"github.com/seedlings-calm/chat-kafka/internal/proto/types"
-	"google.golang.org/grpc"
+	infrastructure_grpc "github.com/seedlings-calm/chat-kafka/internal/infrastructure/grpc"
 )
 
 func main() {
 	// Initialize repositories and business logic
-	repo := repository.NewMySQLChatRepository()
-	chatLogic := logic.NewChatLogic(repo)
-	chatService := interfaces_grpc.NewChatService(chatLogic)
-
-	// Setup gRPC server
-	grpcServer := grpc.NewServer()
-	types.RegisterChatServiceServer(grpcServer, chatService)
+	grpcServer := infrastructure_grpc.NewGRPCServer()
 
 	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {

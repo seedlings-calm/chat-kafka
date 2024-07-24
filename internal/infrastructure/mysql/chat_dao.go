@@ -1,14 +1,12 @@
-package repository
+package mysql
 
 import (
 	"strconv"
-
-	"github.com/seedlings-calm/chat-kafka/internal/domain/model"
 )
 
 type ChatRepository interface {
 	GetGroupUsers(groupID string) []string
-	SaveMessage(message model.Message) error
+	SaveMessage(message string) error
 }
 type MySQLChatRepository struct {
 }
@@ -26,6 +24,6 @@ func (r *MySQLChatRepository) GetGroupUsers(groupID string) []string {
 	return users
 }
 
-func (r *MySQLChatRepository) SaveMessage(message model.Message) error {
+func (r *MySQLChatRepository) SaveMessage(message string) error {
 	return nil
 }

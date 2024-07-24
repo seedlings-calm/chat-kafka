@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/seedlings-calm/chat-kafka/common"
-	"github.com/seedlings-calm/chat-kafka/internal/proto/types"
+	"github.com/seedlings-calm/chat-kafka/internal/constants"
+	"github.com/seedlings-calm/chat-kafka/proto/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -77,13 +77,13 @@ func chat(client types.ChatServiceClient) {
 		// 	From:     strconv.Itoa(i + 1),
 		// 	To:       "",
 		// 	Msg:      []*types.MsgType{msg},
-		// 	ChatType: common.Group,
+		// 	ChatType: constants.Group,
 		// }
 		data := &types.ChatServiceRequest{
 			From:     strconv.Itoa(i + 1),
 			To:       "1",
 			Msg:      []*types.MsgType{msg},
-			ChatType: common.Private,
+			ChatType: constants.Private,
 		}
 		err = stream.Send(data)
 		if err != nil {
@@ -144,7 +144,7 @@ func broadcast(client types.ChatServiceClient) {
 			From:     "system",
 			To:       strconv.Itoa(i + 1),
 			Msg:      []*types.MsgType{msg},
-			ChatType: common.Broadcast,
+			ChatType: constants.Broadcast,
 		}
 		err = stream.Send(data)
 		if err != nil {

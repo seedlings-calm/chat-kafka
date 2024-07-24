@@ -1,11 +1,11 @@
-package grpc
+package infrastructure_grpc
 
 import (
 	"log"
 	"sync"
 
-	logic "github.com/seedlings-calm/chat-kafka/internal/logic/grpc"
-	"github.com/seedlings-calm/chat-kafka/internal/proto/types"
+	"github.com/seedlings-calm/chat-kafka/internal/usecase"
+	"github.com/seedlings-calm/chat-kafka/proto/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -19,10 +19,10 @@ type ChatServer struct {
 	clients          sync.Map
 	broadcastClients sync.Map
 	//消息处理逻辑
-	logic logic.ChatLogic
+	logic usecase.ChatLogic
 }
 
-func NewChatService(logic logic.ChatLogic) *ChatServer {
+func NewChatService(logic usecase.ChatLogic) *ChatServer {
 	return &ChatServer{
 		logic: logic,
 		// clients:           make(map[string]types.ChatService_ChatServer),

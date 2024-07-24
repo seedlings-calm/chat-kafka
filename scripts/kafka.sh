@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-docker-compose -f ./internal/interfaces/kafka/docker-compose.yml up -d
+docker-compose  up -d
 
 docker ps
 
-# docker-compose -f ./internal/interfaces/kafka/docker-compose.yml logs kafka-0
-# docker-compose -f ./internal/interfaces/kafka/docker-compose.yml logs kafka-1
-# docker-compose -f ./internal/interfaces/kafka/docker-compose.yml logs kafka-2
-# docker-compose -f ./internal/interfaces/kafka/docker-compose.yml logs kafdrop
+# docker-compose  logs kafka-0
+# docker-compose  logs kafka-1
+# docker-compose  logs kafka-2
+# docker-compose  logs kafdrop

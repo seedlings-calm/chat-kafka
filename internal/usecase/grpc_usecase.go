@@ -1,11 +1,11 @@
-package logic
+package usecase
 
 import (
 	"log"
 
-	"github.com/seedlings-calm/chat-kafka/common"
-	"github.com/seedlings-calm/chat-kafka/internal/interfaces/repository"
-	"github.com/seedlings-calm/chat-kafka/internal/proto/types"
+	"github.com/seedlings-calm/chat-kafka/internal/constants"
+	"github.com/seedlings-calm/chat-kafka/internal/infrastructure/mysql"
+	"github.com/seedlings-calm/chat-kafka/proto/types"
 )
 
 type ChatLogic interface {
@@ -14,10 +14,10 @@ type ChatLogic interface {
 }
 
 type chatLogic struct {
-	repo repository.ChatRepository
+	repo mysql.ChatRepository
 }
 
-func NewChatLogic(repo repository.ChatRepository) ChatLogic {
+func NewChatLogic(repo mysql.ChatRepository) ChatLogic {
 	return &chatLogic{
 		repo: repo,
 	}
@@ -34,10 +34,10 @@ func (uc *chatLogic) HandleChatMessage(req *types.ChatServiceRequest) *types.Cha
 	}
 
 	switch req.ChatType {
-	case common.Private:
+	case constants.Private:
 		// 私聊，发送给指定用户
 		response.To = append(response.To, req.To)
-	case common.Group:
+	case constants.Group:
 		// 群聊，发送给群组中的每个用户
 		users := uc.repo.GetGroupUsers(req.To)
 		response.To = append(response.To, users...)
