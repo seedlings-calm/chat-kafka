@@ -27,9 +27,9 @@ message MsgType {
 
 message ChatServiceRequest {
     string from = 1; //发送方
-    string to = 2; //值是唯一的标识， 根据chat_type 来决定唯一的用户还是群组
+    string to = 2; //值是唯一的标识， 根据chat_type 来决定唯一的用户，群组，或者是直播间
     repeated MsgType msg = 3; //发送内容，数组 支持多类型信息一起发送
-    string chat_type = 4; // private,group
+    string chat_type = 4; // private,group,broadcast
 }
 
 message ChatServiceResponse {

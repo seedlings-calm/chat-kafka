@@ -10,7 +10,7 @@ import (
 
 type ChatLogic interface {
 	HandleChatMessage(req *types.ChatServiceRequest) *types.ChatServiceResponse
-	HandleBoardcast(req *types.ChatServiceRequest) *types.ChatServiceResponse
+	HandleBroadcast(req *types.ChatServiceRequest) *types.ChatServiceResponse
 }
 
 type chatLogic struct {
@@ -45,6 +45,12 @@ func (uc *chatLogic) HandleChatMessage(req *types.ChatServiceRequest) *types.Cha
 	return response
 }
 
-func (uc *chatLogic) HandleBoardcast(req *types.ChatServiceRequest) *types.ChatServiceResponse {
-	return nil
+func (uc *chatLogic) HandleBroadcast(req *types.ChatServiceRequest) *types.ChatServiceResponse {
+	log.Println("进入服务端广播消息处理")
+	response := &types.ChatServiceResponse{
+		Msg:  req.GetMsg(),
+		From: req.From,
+		To:   make([]string, 0),
+	}
+	return response
 }

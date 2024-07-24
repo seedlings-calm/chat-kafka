@@ -17,7 +17,7 @@ type ChatServer struct {
 	types.UnimplementedChatServiceServer
 	// clients map[string]types.ChatService_ChatServer
 	clients          sync.Map
-	boardcastClients sync.Map
+	broadcastClients sync.Map
 	//消息处理逻辑
 	logic logic.ChatLogic
 }
@@ -27,7 +27,7 @@ func NewChatService(logic logic.ChatLogic) *ChatServer {
 		logic: logic,
 		// clients:           make(map[string]types.ChatService_ChatServer),
 		clients:          sync.Map{},
-		boardcastClients: sync.Map{},
+		broadcastClients: sync.Map{},
 	}
 }
 
@@ -50,8 +50,10 @@ func (cs *ChatServer) Chat(stream types.ChatService_ChatServer) error {
 		reqMsg, err := stream.Recv()
 		if err != nil {
 			if status.Code(err) == codes.Canceled || status.Code(err) == codes.DeadlineExceeded {
+				//可以做用户的连接，断开日志
 				log.Printf("Client %s disconnected: %v", clientID, err)
 			} else {
+				//异常错误
 				log.Printf("Error receiving message from client %s: %v", clientID, err)
 			}
 			return err
@@ -79,8 +81,8 @@ func (cs *ChatServer) Broadcast(stream types.ChatService_BroadcastServer) error 
 	}
 	clientID := ids[0]
 
-	cs.boardcastClients.Store(clientID, stream)
-	defer cs.boardcastClients.Delete(clientID)
+	cs.broadcastClients.Store(clientID, stream)
+	defer cs.broadcastClients.Delete(clientID)
 
 	for {
 		// 接收消息
@@ -95,8 +97,8 @@ func (cs *ChatServer) Broadcast(stream types.ChatService_BroadcastServer) error 
 		}
 
 		//调用消息处理中间件处理接收到的消息，然后返回处理结果，根据结果把消息推送给特定用户
-		resMsg := cs.logic.HandleBoardcast(reqMsg)
-		err = cs.SendBoardcastMessage(resMsg)
+		resMsg := cs.logic.HandleBroadcast(reqMsg)
+		err = cs.SendBroadcastMessage(resMsg)
 		if err != nil {
 			log.Println("发送失败:", err.Error())
 			return err
@@ -130,8 +132,9 @@ func (cs *ChatServer) SendChatMessage(msg *types.ChatServiceResponse) error {
 	return nil
 }
 
-func (cs *ChatServer) SendBoardcastMessage(msg *types.ChatServiceResponse) error {
-	cs.boardcastClients.Range(func(key, value interface{}) bool {
+func (cs *ChatServer) SendBroadcastMessage(msg *types.ChatServiceResponse) error {
+	//广播的接收人员，需要获取在线用户发送，当前作为测试广播
+	cs.broadcastClients.Range(func(key, value interface{}) bool {
 		stream, ok := value.(types.ChatService_BroadcastServer)
 		if !ok {
 			log.Println("获取广播流错误")

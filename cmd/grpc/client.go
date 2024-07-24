@@ -124,7 +124,7 @@ func broadcast(client types.ChatServiceClient) {
 					}
 					log.Fatal(err)
 				}
-				log.Printf("我是 %d,收到:%s 的消息\n", i+1, msg.From)
+				log.Printf("我是 %d,收到:%s 的消息\n", i+1, msg.GetFrom())
 			}
 		}(i, stream)
 	}
@@ -150,6 +150,7 @@ func broadcast(client types.ChatServiceClient) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Println("广播了一条消息")
 	}
 	wg.Wait()
 }
