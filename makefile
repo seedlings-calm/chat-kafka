@@ -3,4 +3,7 @@ protoc:
 
 tree:
 	@./scripts/tree.sh
-.PHONY: protoc
+kafka:
+	@./scripts/kafka.sh
+
+.PHONY: protoc tree kafka
