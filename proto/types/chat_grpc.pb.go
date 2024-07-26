@@ -24,8 +24,6 @@ const _ = grpc.SupportPackageIsVersion7
 type ChatServiceClient interface {
 	// 私聊,群聊
 	Chat(ctx context.Context, opts ...grpc.CallOption) (ChatService_ChatClient, error)
-	// 广播,用户和服务端都可以发广播
-	Broadcast(ctx context.Context, opts ...grpc.CallOption) (ChatService_BroadcastClient, error)
 }
 
 type chatServiceClient struct {
@@ -67,45 +65,12 @@ func (x *chatServiceChatClient) Recv() (*ChatServiceResponse, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) Broadcast(ctx context.Context, opts ...grpc.CallOption) (ChatService_BroadcastClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ChatService_ServiceDesc.Streams[1], "/chatkafka.chat.ChatService/Broadcast", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &chatServiceBroadcastClient{stream}
-	return x, nil
-}
-
-type ChatService_BroadcastClient interface {
-	Send(*ChatServiceRequest) error
-	Recv() (*ChatServiceResponse, error)
-	grpc.ClientStream
-}
-
-type chatServiceBroadcastClient struct {
-	grpc.ClientStream
-}
-
-func (x *chatServiceBroadcastClient) Send(m *ChatServiceRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *chatServiceBroadcastClient) Recv() (*ChatServiceResponse, error) {
-	m := new(ChatServiceResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility
 type ChatServiceServer interface {
 	// 私聊,群聊
 	Chat(ChatService_ChatServer) error
-	// 广播,用户和服务端都可以发广播
-	Broadcast(ChatService_BroadcastServer) error
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -115,9 +80,6 @@ type UnimplementedChatServiceServer struct {
 
 func (UnimplementedChatServiceServer) Chat(ChatService_ChatServer) error {
 	return status.Errorf(codes.Unimplemented, "method Chat not implemented")
-}
-func (UnimplementedChatServiceServer) Broadcast(ChatService_BroadcastServer) error {
-	return status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
@@ -158,32 +120,6 @@ func (x *chatServiceChatServer) Recv() (*ChatServiceRequest, error) {
 	return m, nil
 }
 
-func _ChatService_Broadcast_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ChatServiceServer).Broadcast(&chatServiceBroadcastServer{stream})
-}
-
-type ChatService_BroadcastServer interface {
-	Send(*ChatServiceResponse) error
-	Recv() (*ChatServiceRequest, error)
-	grpc.ServerStream
-}
-
-type chatServiceBroadcastServer struct {
-	grpc.ServerStream
-}
-
-func (x *chatServiceBroadcastServer) Send(m *ChatServiceResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *chatServiceBroadcastServer) Recv() (*ChatServiceRequest, error) {
-	m := new(ChatServiceRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -195,12 +131,6 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Chat",
 			Handler:       _ChatService_Chat_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "Broadcast",
-			Handler:       _ChatService_Broadcast_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

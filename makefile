@@ -7,3 +7,8 @@ kafka:
 	@./scripts/kafka.sh
 
 .PHONY: protoc tree kafka
+
+
+
+dev: 
+	go run ./ 

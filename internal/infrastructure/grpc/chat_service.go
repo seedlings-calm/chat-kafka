@@ -3,31 +3,30 @@ package infrastructure_grpc
 import (
 	"log"
 	"sync"
+	"time"
 
-	"github.com/seedlings-calm/chat-kafka/internal/usecase"
+	"github.com/seedlings-calm/chat-kafka/internal/constants"
+	"github.com/seedlings-calm/chat-kafka/internal/infrastructure/kafka"
+	"github.com/seedlings-calm/chat-kafka/internal/infrastructure/redis"
 	"github.com/seedlings-calm/chat-kafka/proto/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // 定义聊天服务实现proto编译的ChatServiceServer接口
 type ChatServer struct {
 	types.UnimplementedChatServiceServer
-	// clients map[string]types.ChatService_ChatServer
-	clients          sync.Map
-	broadcastClients sync.Map
-	//消息处理逻辑
-	logic usecase.ChatLogic
+	clients  sync.Map          //客户端流存储
+	consumer *kafka.ImConsumer //kafka消费者实例
 }
 
-func NewChatService(logic usecase.ChatLogic) *ChatServer {
+func NewChatService() *ChatServer {
 	return &ChatServer{
-		logic: logic,
-		// clients:           make(map[string]types.ChatService_ChatServer),
-		clients:          sync.Map{},
-		broadcastClients: sync.Map{},
+		clients:  sync.Map{},
+		consumer: kafka.NewImConsumer(),
 	}
 }
 
@@ -42,9 +41,10 @@ func (cs *ChatServer) Chat(stream types.ChatService_ChatServer) error {
 		return grpc.Errorf(codes.InvalidArgument, "missing client ID")
 	}
 	clientID := ids[0]
-
+	//通讯客户端存储
 	cs.clients.Store(clientID, stream)
 	defer cs.clients.Delete(clientID)
+
 	for {
 		// 接收消息
 		reqMsg, err := stream.Recv()
@@ -58,91 +58,176 @@ func (cs *ChatServer) Chat(stream types.ChatService_ChatServer) error {
 			}
 			return err
 		}
-
-		//调用消息处理中间件处理接收到的消息，然后返回处理结果，根据结果把消息推送给特定用户
-		resMsg := cs.logic.HandleChatMessage(reqMsg)
-		err = cs.SendChatMessage(resMsg)
-		if err != nil {
-			log.Println("发送失败:", err.Error())
-			return err
+		switch reqMsg.ChatType {
+		case constants.Private:
+			kafka.New().PushPrivate(reqMsg)
+		case constants.Group:
+			kafka.New().PushGroup(reqMsg)
+		case constants.Broadcast:
+			kafka.New().PushBroadcast(reqMsg)
+		default:
+			log.Printf("未知的消息类型:%s", reqMsg.ChatType)
+			continue
 		}
-
+		cs.privateMsg(stream)
+		go cs.groupMsg(stream)
+		go cs.broadcastMsg(stream)
 	}
 }
-func (cs *ChatServer) Broadcast(stream types.ChatService_BroadcastServer) error {
-	// Extract unique identifier from metadata
-	md, ok := metadata.FromIncomingContext(stream.Context())
-	if !ok {
-		return grpc.Errorf(codes.Unauthenticated, "missing metadata")
-	}
-	ids := md["client-id"]
-	if len(ids) == 0 {
-		return grpc.Errorf(codes.InvalidArgument, "missing client ID")
-	}
-	clientID := ids[0]
 
-	cs.broadcastClients.Store(clientID, stream)
-	defer cs.broadcastClients.Delete(clientID)
+// privateMsg 从 Kafka 消费消息并通过 gRPC 推送到客户端
+func (cs *ChatServer) privateMsg(stream types.ChatService_ChatServer) {
+	go func() {
 
+		for {
+			consumer := cs.consumer.GetPrivateConsumer()
+			msg, err := consumer.Pull()
+			if err != nil {
+				log.Printf("Failed to pull message: %v", err)
+				continue
+			}
+
+			req := &types.ChatServiceRequest{}
+			err = proto.Unmarshal([]byte(msg.Value), req)
+			if err != nil {
+				log.Println("proto unmarshal err:", err)
+				continue
+			}
+			response := &types.ChatServiceResponse{
+				From:           req.From,
+				To:             []string{req.To},
+				Msg:            req.GetMsg(),
+				ChatType:       "private", // or whatever type is appropriate
+				RoomId:         "",
+				FromClientType: req.FromClientType, // or whatever is appropriate
+				ToClientType:   "",                 // or whatever is appropriate
+			}
+
+			for _, v := range response.To {
+				cs.clients.Range(func(key, value interface{}) bool {
+					if key == v {
+						stream, ok := value.(types.ChatService_ChatServer)
+						if !ok {
+							log.Println("获取客户端流 出错")
+							return true
+						}
+						err := stream.Send(response)
+						if err != nil {
+							log.Println("send fail:", err)
+							return true
+						}
+
+						log.Printf("%s 的消息发送给了 %s", response.From, v)
+					}
+					return true
+				})
+			}
+			redis.GetChatRedis().Set(stream.Context(), redis.ChatPrivateKey(response.From), response, 7*24*time.Hour)
+
+			consumer.Ack(msg.Session)
+		}
+	}()
+
+}
+
+// groupMsg 从 Kafka 消费消息并通过 gRPC 推送到客户端
+func (cs *ChatServer) groupMsg(stream types.ChatService_ChatServer) {
 	for {
-		// 接收消息
-		reqMsg, err := stream.Recv()
+		consumer := cs.consumer.GetGroupConsumer()
+		msg, err := consumer.Pull()
 		if err != nil {
-			if status.Code(err) == codes.Canceled || status.Code(err) == codes.DeadlineExceeded {
-				log.Printf("Client %s disconnected: %v", clientID, err)
-			} else {
-				log.Printf("Error receiving message from client %s: %v", clientID, err)
-			}
-			return err
+			log.Printf("Failed to pull message: %v", err)
+			continue
 		}
 
-		//调用消息处理中间件处理接收到的消息，然后返回处理结果，根据结果把消息推送给特定用户
-		resMsg := cs.logic.HandleBroadcast(reqMsg)
-		err = cs.SendBroadcastMessage(resMsg)
+		req := &types.ChatServiceRequest{}
+		err = proto.Unmarshal([]byte(msg.Value), req)
 		if err != nil {
-			log.Println("发送失败:", err.Error())
-			return err
+			log.Println("proto unmarshal err:", err)
+			continue
+		}
+		//TODO:
+		//群组聊天接收者，需要根据request.To 字符串解析出群组成员，赋值到response.To里面
+
+		// 将 Kafka 消息发送回客户端
+		response := &types.ChatServiceResponse{
+			From:           req.From,
+			To:             []string{"1", "2", "3"},
+			Msg:            req.GetMsg(),
+			ChatType:       "group", // or whatever type is appropriate
+			RoomId:         req.GetRoomId(),
+			FromClientType: req.FromClientType, // or whatever is appropriate
+			ToClientType:   "",                 // or whatever is appropriate
 		}
 
+		for _, v := range response.To {
+			cs.clients.Range(func(key, value interface{}) bool {
+				if key == v {
+					stream, ok := value.(types.ChatService_ChatServer)
+					if !ok {
+						log.Println("获取客户端流 出错")
+						return true
+					}
+					err := stream.Send(response)
+					if err != nil {
+						log.Println("send fail:", err)
+						return true
+					}
+					log.Printf("%s 的群组消息，发送给了 %s", response.From, v)
+				}
+				return true
+			})
+		}
 	}
 }
 
-func (cs *ChatServer) SendChatMessage(msg *types.ChatServiceResponse) error {
-
-	log.Println("接收方::", msg.To)
-
-	for _, v := range msg.To {
-		cs.clients.Range(func(key, value interface{}) bool {
-			if key == v {
-				stream, ok := value.(types.ChatService_ChatServer)
-				if !ok {
-					log.Println("获取客户端流 出错")
-					return true
-				}
-				err := stream.Send(msg)
-				if err != nil {
-					log.Println("send fail:", err)
-					return true
-				}
-				log.Printf("%s 的消息发送给了 %s", msg.From, v)
-			}
-			return true
-		})
-	}
-	return nil
-}
-
-func (cs *ChatServer) SendBroadcastMessage(msg *types.ChatServiceResponse) error {
-	//广播的接收人员，需要获取在线用户发送，当前作为测试广播
-	cs.broadcastClients.Range(func(key, value interface{}) bool {
-		stream, ok := value.(types.ChatService_BroadcastServer)
-		if !ok {
-			log.Println("获取广播流错误")
-			return true
+// broadcastMsg 从 Kafka 消费消息并通过 gRPC 推送到客户端
+func (cs *ChatServer) broadcastMsg(stream types.ChatService_ChatServer) {
+	for {
+		consumer := cs.consumer.GetBroadcastConsumer()
+		msg, err := consumer.Pull()
+		if err != nil {
+			log.Printf("Failed to pull message: %v", err)
+			continue
 		}
-		stream.Send(msg)
-		log.Printf("广播消息给 %s", key)
-		return true
-	})
-	return nil
+
+		req := &types.ChatServiceRequest{}
+		err = proto.Unmarshal([]byte(msg.Value), req)
+		if err != nil {
+			log.Println("proto unmarshal err:", err)
+			continue
+		}
+		//TODO:
+		//广播信息，发送给所有在线用户，也可以定义发送用户群体
+
+		// 将 Kafka 消息发送回客户端
+		response := &types.ChatServiceResponse{
+			From:           req.From,
+			To:             []string{"2", "3"},
+			Msg:            req.GetMsg(),
+			ChatType:       "broadcast", // or whatever type is appropriate
+			RoomId:         "",
+			FromClientType: req.FromClientType, // or whatever is appropriate
+			ToClientType:   req.ToClientType,   // or whatever is appropriate
+		}
+
+		for _, v := range response.To {
+			cs.clients.Range(func(key, value interface{}) bool {
+				if key == v {
+					stream, ok := value.(types.ChatService_ChatServer)
+					if !ok {
+						log.Println("获取客户端流 出错")
+						return true
+					}
+					err := stream.Send(response)
+					if err != nil {
+						log.Println("send fail:", err)
+						return true
+					}
+					log.Printf("%s 的广播消息，广播给了 %s", response.From, v)
+				}
+				return true
+			})
+		}
+	}
 }

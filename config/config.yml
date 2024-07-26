@@ -1,0 +1,13 @@
+redis:
+    -
+        host: 127.0.0.1
+        port: 6379
+        pwd: 
+        db: 1
+        name: user #用户相关
+    -
+        host: 127.0.0.1
+        port: 6379
+        pwd: 
+        db: 1
+        name: chat #聊天相关

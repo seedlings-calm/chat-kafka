@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/seedlings-calm/chat-kafka/proto/types"
+	"google.golang.org/protobuf/proto"
 )
 
 type Kafka struct {
@@ -35,9 +37,9 @@ type KafkaConf struct {
 }
 
 type ConsumerMessage struct {
-	Message   string
+	Value     []byte
 	Timestamp time.Time
-	Key       string
+	Key       []byte
 	Topic     string
 	Partition int32
 	Offset    int64
@@ -75,13 +77,15 @@ func (c *consume) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 				log.Printf("message channel was closed")
 				return nil
 			}
-			log.Printf("Message claimed: value = %s, topic = %s,offset = %d ", string(message.Value), message.Topic, message.Offset)
-
+			log.Printf("Message claimed: key = %s, topic = %s,offset = %d ", string(message.Key), message.Topic, message.Offset)
+			r := &types.ChatServiceRequest{}
+			proto.Unmarshal(message.Value, r)
+			log.Println(r)
 			if c.C != nil {
 				c.C <- ConsumerMessage{
-					Message:   string(message.Value),
+					Value:     message.Value,
 					Timestamp: message.Timestamp,
-					Key:       string(message.Key),
+					Key:       message.Key,
 					Topic:     message.Topic,
 					Partition: message.Partition,
 					Offset:    message.Offset,
@@ -265,8 +269,8 @@ func (k *kafka) Pull() (ConsumerMessage, error) {
 			fmt.Println("消费到一条数据")
 			return message, nil
 		}
-	case <-time.After(time.Millisecond * 10): //超时处理 十毫秒没有消息返回
-		return ConsumerMessage{}, errors.New("not found new message")
+	case <-time.After(time.Second * 5): //超时处理 十毫秒没有消息返回
+		return ConsumerMessage{}, errors.New("5秒时间没有消息通讯")
 	}
 }
 

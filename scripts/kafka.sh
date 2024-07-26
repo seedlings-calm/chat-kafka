@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-docker-compose  up -d
+docker-compose -f scripts/docker-compose.yml  up -d
 
 docker ps
 

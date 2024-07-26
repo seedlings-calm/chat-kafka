@@ -81,10 +81,20 @@ services:
         - kafka-0
         - kafka-1
         - kafka-2
+  redis:
+      image: redis:7.2
+      container_name: redis
+      ports:
+        - "6379:6379"
+      volumes:
+            - redis_data:/data
+
 volumes:
   kafka_0_data:
     driver: local
   kafka_1_data:
     driver: local
   kafka_2_data:
+    driver: local
+  redis_data:
     driver: local
