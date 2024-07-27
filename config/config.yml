@@ -31,3 +31,12 @@ kafka:
             - 127.0.0.1:9196
         topic: broadcast
         group: broadcast-group
+
+postgres: 
+    -
+    Host: 127.0.0.1
+    Port: 5432
+    User: postgres
+    Password: 123456789
+    Database: kafka-chat
+    Name: default

@@ -1,8 +1,18 @@
 package config
 
 type BaseViper struct {
-	Redis []Redis `mapstructure:"redis" json:"redis" yaml:"redis"`
-	Kafka Kafka   `mapstructure:"kafka" json:"kafka" yaml:"kafka"`
+	Redis    []Redis    `mapstructure:"redis" json:"redis" yaml:"redis"`
+	Kafka    Kafka      `mapstructure:"kafka" json:"kafka" yaml:"kafka"`
+	Postgres []Postgres `mapstructure:"postgres" json:"postgres" yaml:"postgres"`
+}
+
+type Postgres struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Database string
+	Name     string
 }
 
 type Redis struct {
