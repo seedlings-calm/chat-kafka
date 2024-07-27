@@ -9,10 +9,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func init() {
-	newImProducer()
-}
-
 var (
 	imProduceOnce sync.Once
 	imProducer    *ImProducer
@@ -27,7 +23,7 @@ type ImProducer struct {
 }
 
 func GetImProducer() *ImProducer {
-	return imProducer
+	return newImProducer()
 }
 
 func newImProducer() *ImProducer {
