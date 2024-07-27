@@ -9,6 +9,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+func init() {
+	newImProducer()
+}
+
 var (
 	imProduceOnce sync.Once
 	imProducer    *ImProducer
@@ -22,7 +26,11 @@ type ImProducer struct {
 
 }
 
-func New() *ImProducer {
+func GetImProducer() *ImProducer {
+	return imProducer
+}
+
+func newImProducer() *ImProducer {
 	imProduceOnce.Do(func() {
 		private, err := NewSyncProducer(KafkaConf{
 			Addr:  addr,

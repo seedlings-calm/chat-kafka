@@ -7,6 +7,10 @@ import (
 	"github.com/seedlings-calm/chat-kafka/internal/constants"
 )
 
+func init() {
+	newImConsumer()
+}
+
 var (
 	imConsumerOnce sync.Once
 	imConsumer     *ImConsumer
@@ -19,7 +23,11 @@ type ImConsumer struct {
 
 }
 
-func NewImConsumer() *ImConsumer {
+func GetImConsumer() *ImConsumer {
+	return imConsumer
+}
+
+func newImConsumer() *ImConsumer {
 	imConsumerOnce.Do(func() {
 		private, err := NewConsumer(KafkaConf{
 			Addr:    addr,

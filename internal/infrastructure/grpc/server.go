@@ -10,7 +10,7 @@ func NewGRPCServer() *grpc.Server {
 	grpcServer := grpc.NewServer()
 
 	//初始化实现了ChatService服务
-	chatService := NewChatService()
+	chatService := new(ChatServer)
 
 	types.RegisterChatServiceServer(grpcServer, chatService)
 
