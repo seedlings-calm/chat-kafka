@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/seedlings-calm/chat-kafka/internal/constants"
+	"github.com/seedlings-calm/chat-kafka/internal/infrastructure/config"
 )
 
 var (
@@ -26,27 +26,27 @@ func GetImConsumer() *ImConsumer {
 func newImConsumer() *ImConsumer {
 	imConsumerOnce.Do(func() {
 		private, err := NewConsumer(KafkaConf{
-			Addr:    addr,
-			Group:   "private-group",
-			Topic:   constants.Private,
+			Addr:    config.GetGlobalConf().Kafka.Private.Addr,
+			Group:   config.GetGlobalConf().Kafka.Private.Group,
+			Topic:   config.GetGlobalConf().Kafka.Private.Topic,
 			Context: context.Background(),
 		})
 		if err != nil {
 			panic(err)
 		}
 		group, err := NewConsumer(KafkaConf{
-			Addr:    addr,
-			Group:   "group-group",
-			Topic:   constants.Group,
+			Addr:    config.GetGlobalConf().Kafka.Group.Addr,
+			Group:   config.GetGlobalConf().Kafka.Group.Group,
+			Topic:   config.GetGlobalConf().Kafka.Group.Topic,
 			Context: context.Background(),
 		})
 		if err != nil {
 			panic(err)
 		}
 		broadcast, err := NewConsumer(KafkaConf{
-			Addr:    addr,
-			Group:   "broadcast-group",
-			Topic:   constants.Broadcast,
+			Addr:    config.GetGlobalConf().Kafka.Broadcast.Addr,
+			Group:   config.GetGlobalConf().Kafka.Broadcast.Group,
+			Topic:   config.GetGlobalConf().Kafka.Broadcast.Topic,
 			Context: context.Background(),
 		})
 		if err != nil {

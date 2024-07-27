@@ -11,3 +11,23 @@ redis:
         pwd: 
         db: 1
         name: chat #聊天相关
+kafka: 
+    private:
+        addr:
+            - 127.0.0.1:9194
+            - 127.0.0.1:9195
+            - 127.0.0.1:9196
+        topic: private
+        group: private-group
+    group: 
+            - 127.0.0.1:9194
+            - 127.0.0.1:9195
+            - 127.0.0.1:9196
+        topic: group
+        group: group-group
+    broadcast: 
+            - 127.0.0.1:9194
+            - 127.0.0.1:9195
+            - 127.0.0.1:9196
+        topic: broadcast
+        group: broadcast-group

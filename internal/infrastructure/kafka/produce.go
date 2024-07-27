@@ -4,7 +4,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/seedlings-calm/chat-kafka/internal/constants"
+	"github.com/seedlings-calm/chat-kafka/internal/infrastructure/config"
 	"github.com/seedlings-calm/chat-kafka/proto/types"
 	"google.golang.org/protobuf/proto"
 )
@@ -12,7 +12,6 @@ import (
 var (
 	imProduceOnce sync.Once
 	imProducer    *ImProducer
-	addr          = []string{"127.0.0.1:9194", "127.0.0.1:9195", "127.0.0.1:9196"}
 )
 
 type ImProducer struct {
@@ -29,22 +28,22 @@ func GetImProducer() *ImProducer {
 func newImProducer() *ImProducer {
 	imProduceOnce.Do(func() {
 		private, err := NewSyncProducer(KafkaConf{
-			Addr:  addr,
-			Topic: constants.Private,
+			Addr:  config.GetGlobalConf().Kafka.Private.Addr,
+			Topic: config.GetGlobalConf().Kafka.Private.Topic,
 		})
 		if err != nil {
 			panic(err)
 		}
 		group, err := NewSyncProducer(KafkaConf{
-			Addr:  addr,
-			Topic: constants.Group,
+			Addr:  config.GetGlobalConf().Kafka.Group.Addr,
+			Topic: config.GetGlobalConf().Kafka.Group.Topic,
 		})
 		if err != nil {
 			panic(err)
 		}
 		broadcast, err := NewAsyncProducer(KafkaConf{
-			Addr:  addr,
-			Topic: constants.Broadcast,
+			Addr:  config.GetGlobalConf().Kafka.Broadcast.Addr,
+			Topic: config.GetGlobalConf().Kafka.Broadcast.Topic,
 		})
 		if err != nil {
 			panic(err)
