@@ -11,4 +11,4 @@ kafka:
 
 
 dev: 
-	go run ./ 
+	go run ./ -c ./config/config.yml

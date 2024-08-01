@@ -1,42 +1,42 @@
 redis:
-    -
-        host: 127.0.0.1
-        port: 6379
-        pwd: 
-        db: 1
-        name: user #用户相关
-    -
-        host: 127.0.0.1
-        port: 6379
-        pwd: 
-        db: 1
-        name: chat #聊天相关
-kafka: 
-    private:
-        addr:
-            - 127.0.0.1:9194
-            - 127.0.0.1:9195
-            - 127.0.0.1:9196
-        topic: private
-        group: private-group
-    group: 
-            - 127.0.0.1:9194
-            - 127.0.0.1:9195
-            - 127.0.0.1:9196
-        topic: group
-        group: group-group
-    broadcast: 
-            - 127.0.0.1:9194
-            - 127.0.0.1:9195
-            - 127.0.0.1:9196
-        topic: broadcast
-        group: broadcast-group
+  - host: 127.0.0.1
+    port: 6379
+    pwd: 
+    db: 1
+    name: user # 用户相关
+  - host: 127.0.0.1
+    port: 6379
+    pwd: 
+    db: 1
+    name: chat # 聊天相关
 
-postgres: 
-    -
-    Host: 127.0.0.1
-    Port: 5432
-    User: postgres
-    Password: 123456789
-    Database: kafka-chat
-    Name: default
+kafka:
+  private:
+    addr:
+      - 127.0.0.1:9194
+      - 127.0.0.1:9195
+      - 127.0.0.1:9196
+    topic: private
+    group: private-group
+  group:
+    addr:
+      - 127.0.0.1:9194
+      - 127.0.0.1:9195
+      - 127.0.0.1:9196
+    topic: group
+    group: group-group
+  broadcast:
+    addr:
+      - 127.0.0.1:9194
+      - 127.0.0.1:9195
+      - 127.0.0.1:9196
+    topic: broadcast
+    group: broadcast-group
+
+postgres:
+  - host: 127.0.0.1
+    port: 5432
+    user: postgres
+    password: 123456789
+    database: kafka-chat
+    name: default

@@ -24,9 +24,9 @@ type Redis struct {
 }
 
 type Kafka struct {
-	Private   KafkaConf //私聊
-	Group     KafkaConf //群聊
-	Broadcast KafkaConf //广播
+	Private   KafkaConf `mapstructure:"private" json:"private" yaml:"private"`       //私聊
+	Group     KafkaConf `mapstructure:"group" json:"group" yaml:"group"`             //群聊
+	Broadcast KafkaConf `mapstructure:"broadcast" json:"broadcast" yaml:"broadcast"` //广播
 }
 
 type KafkaConf struct {

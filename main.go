@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/seedlings-calm/chat-kafka/internal/api/router"
 	"github.com/seedlings-calm/chat-kafka/internal/infrastructure/config"
 	infrastructure_grpc "github.com/seedlings-calm/chat-kafka/internal/infrastructure/grpc"
 )
@@ -29,9 +30,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to listen on port 50051: %v", err)
 	}
+	go func() {
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Fatalf("Failed to serve gRPC server: %v", err)
+		}
+	}()
+	router.InitEngine().Run("127.0.0.1:8000")
 
-	log.Println("Starting gRPC server on port 50051...")
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("Failed to serve gRPC server: %v", err)
-	}
 }
